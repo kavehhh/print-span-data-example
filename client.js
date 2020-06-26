@@ -3,15 +3,14 @@ var opentracing = require('opentracing');
 var lightstep   = require('lightstep-tracer');
 
 opentracing.initGlobalTracer(new lightstep.Tracer({
-    access_token   : '<access_token>',
+    access_token   : process.env.LIGHTSTEP_ACCESS_TOKEN,
     component_name : 'node-client',
-    collector_host : 'localhost',
-    collector_port : 8181,
-    verbosity      : 4,
-    collector_encryption : 'none',
+    collector_host : 'ingest.lightstep.com',
+    collector_port : 443,
+    collector_encryption : 'tls',
     propagators    : {
     	[opentracing.FORMAT_HTTP_HEADERS]: new lightstep.B3Propagator(),
-        [opentracing.FORMAT_TEXT_MAP]: new lightstep.B3Propagator()
+      [opentracing.FORMAT_TEXT_MAP]: new lightstep.B3Propagator()
     }
 }));
 
@@ -21,16 +20,14 @@ span.log({ event : 'query_started' });
 var spanContext = span.context();
 var carrier = {};
 opentracing.globalTracer().inject(spanContext, opentracing.FORMAT_HTTP_HEADERS, carrier);
-console.log(carrier);
-carrier['x-b3-traceid'] = carrier['x-b3-traceid'].substring(16) + carrier['x-b3-traceid'].substring(0,16)
-console.log(carrier);
+
+// You can directly print the span
+console.log(span)
 
 var options = {
   url: 'http://localhost:3001/test',
   headers: carrier
 };
-
-console.log(options);
 
 function callback(err, res, body) {
   if (err) { return console.log(err); }
